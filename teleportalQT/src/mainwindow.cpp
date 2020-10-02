@@ -316,7 +316,7 @@ void MainWindow::updateVehicleData()
 
     //DEPTH VALUES
     QString strDepTest;
-    strDepTest.asprintf("%05.2f M",round(depth * 100) / 100.0);
+    strDepTest.sprintf("%05.2f M",round(depth * 100) / 100.0);
     depthLabelValue->setText(strDepTest);
 
     //COMPASS VALUES
@@ -1127,7 +1127,7 @@ void MainWindow::on_updateConfidence()
     float fDistance=pingLink->getDistance()/1000.0;
     float fConfidence=pingLink->getConfidence();
      QString strValue;
-     strValue.asprintf("%05.2f M (%04.1f%%)",fDistance,fConfidence);
+     strValue.sprintf("%05.2f M (%03d%%)",fDistance,(int)fConfidence);
     SonarlValue->setText(strValue);
 
     // IF SONAR CONFIDENCE VALUE IS LESS THAN CONFIDENCE SETTING THEN OUTPUT FALSE - IGNORE SONAR DISTANCE VALUES
