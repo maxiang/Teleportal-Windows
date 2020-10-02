@@ -315,8 +315,9 @@ void MainWindow::updateVehicleData()
     yawLabelValue->setNum(yawLableCompass);
 
     //DEPTH VALUES
-    depthLabelValue->setNum(round(depth * 100) / 100.0);
-    depthLabelValue->setText(depthLabelValue->text()+" M");
+    QString strDepTest;
+    strDepTest.asprintf("%05.2f M",round(depth * 100) / 100.0);
+    depthLabelValue->setText(strDepTest);
 
     //COMPASS VALUES
     ui->qCompass->setYaw(yawLableCompass);
@@ -1125,7 +1126,8 @@ void MainWindow::on_updateConfidence()
     // UPDATE SONAR VALUES DISTANCE AND CONFIDENCE - ALSO UPDATE WARNING AND DANGER
     float fDistance=pingLink->getDistance()/1000.0;
     float fConfidence=pingLink->getConfidence();
-    QString strValue=QString("%1 M (%2\%)   ").arg(fDistance).arg(fConfidence);
+     QString strValue;
+     strValue.asprintf("%05.2f M (%04.1f%%)",fDistance,fConfidence);
     SonarlValue->setText(strValue);
 
     // IF SONAR CONFIDENCE VALUE IS LESS THAN CONFIDENCE SETTING THEN OUTPUT FALSE - IGNORE SONAR DISTANCE VALUES
