@@ -29,7 +29,7 @@ private:
     };
 
     /* data */
-    GstElement *_pipeline;
+    GstElement *_pipeline=NULL;
     GstElement *_teeRecording;
     GstElement *_pipelineStopRec;
 
@@ -56,6 +56,7 @@ private:
     char *_videoDataRaw;
     GstMapInfo *_videoMap;
     GstBuffer *_videoBuffer;
+    //
 
     static gboolean _onBusMessage(GstBus *bus, GstMessage *message, gpointer data);
     static GstPadProbeReturn _unlinkCallBack(GstPad *pad, GstPadProbeInfo *info, gpointer data);
@@ -85,7 +86,8 @@ public:
     bool startRecording();
     void stopRecording();
     void setRecordingHightlight(bool hightlight);
-
+    GstClockTime    m_delay=0;
+    bool            m_bDelay=false;
 signals:
     void onRecordingChanged();
     void onMouseOverRecordingButtonChanged();

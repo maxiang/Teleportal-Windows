@@ -1386,6 +1386,8 @@ void MainWindow::LoadInIConfig()
 
         // TIME IN SECONDS SINCE THE LAST PICTURE WAS TAKEN BEFORE A NEW ONE CAN BE TAKEN
         sets.setValue("MISC/PhotoDelay",5);
+        sets.setValue("Video/EnableDelay",false);
+        sets.setValue("Video/Delay",0);
     }
 
     // GPS SETTINGS
@@ -1477,6 +1479,9 @@ void MainWindow::LoadInIConfig()
     strUser=sets.value("MISC/user").toString();
     strPass=sets.value("MISC/pass").toString();
     strPhotoDelay=sets.value("MISC/PhotoDelay").toInt();
+
+    videoReceiver->m_bDelay=sets.value("Video/EnableDelay").toBool();
+    videoReceiver->m_delay=sets.value("Video/Delay").toULongLong();
 }
 
 

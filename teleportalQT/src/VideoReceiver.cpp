@@ -83,6 +83,8 @@ void VideoReceiver::start(QQuickWidget *quickWidget)
     GstElement *glupload = gst_element_factory_make("glupload", "glupload");
     GstElement *glcolorconvert = gst_element_factory_make("glcolorconvert", "glcolorconvert");
     GstElement *qmlsink = gst_element_factory_make("qmlglsink",NULL);
+    GstElement *vrtpjitterbuffer = gst_element_factory_make("rtpjitterbuffer", "vjitterbuffer");
+   // GstElement *artpjitterbuffer = gst_element_factory_make("rtpjitterbuffer", "ajitterbuffer");
     /* the plugin must be loaded before loading the qml file to register the
      * GstGLVideoItem qml item */
     
@@ -104,8 +106,11 @@ void VideoReceiver::start(QQuickWidget *quickWidget)
         g_object_set(videoflip, "video-direction", 5, nullptr);
     }
 
-
-    gst_bin_add_many(GST_BIN(_pipeline), src, demux, parser, _teeRecording, queue, decoder,
+    if(m_bDelay)
+    {
+        g_object_set(_pipeline,"delay",m_delay,nullptr);
+    }
+    gst_bin_add_many(GST_BIN(_pipeline), src, vrtpjitterbuffer,demux, parser, _teeRecording, queue, decoder,
                      videoflip, glupload, glcolorconvert, qmlsink,
                      nullptr);
     if (!gst_element_link_many(src, demux, parser, _teeRecording, queue, decoder,
@@ -150,6 +155,7 @@ void VideoReceiver::play()
 {
     if (_pausing)
     {
+
         gst_element_set_state(_pipeline, GST_STATE_PLAYING);
     }
 }
