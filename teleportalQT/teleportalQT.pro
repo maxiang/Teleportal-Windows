@@ -72,3 +72,8 @@ else:unix: LIBS += -L$$PWD/dependencies/qssh/lib/ -lQSsh
 
 INCLUDEPATH += $$PWD/dependencies/qssh/include
 DEPENDPATH += $$PWD/dependencies/qssh/include
+#windbg dump
+QMAKE_CXXFLAGS_RELEASE += -g
+QMAKE_CFLAGS_RELEASE += -g
+QMAKE_LFLAGS_RELEASE = -mthreads
+LIBS    += -lDbgHelp
