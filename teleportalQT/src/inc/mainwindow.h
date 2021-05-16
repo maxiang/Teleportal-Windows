@@ -80,8 +80,12 @@ private slots:
 
 
     void on_actionTakePhoto_triggered();
-
-
+    //qml
+    void  On_QML_StatusChanged(QQuickWidget::Status status);
+    void  On_QML_HighSpeed();
+    void  On_QML_LowSpeed();
+    void  Call_QML_ChangeKey(const QString& strKey);
+    void  SetQMLItemOpacity(QString strObName,qreal fOpacity=1);
 private:
     Ui::MainWindow *ui;
 
@@ -192,7 +196,9 @@ private:
     int32_t             m_devalt=0;
     uint8_t currentVehicle;
     AS::Vehicle_Data_t *vehicle_data;
-
+    QMap<QString,QObject*>              m_qmlObjectMap;
+    QString                             m_curSelectButton;
+    QString                             m_curSelectImg;
     void setupToolBars();
     void setupTimer();
 

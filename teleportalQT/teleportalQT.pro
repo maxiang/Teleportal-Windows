@@ -23,7 +23,6 @@ SOURCES += \
     src/qFlightInstruments.cpp\
     src/VideoReceiver.cpp \
     src/securefileuploader.cpp
-
 HEADERS += \
     src/inc/mainwindow.h\
     src/inc/VideoReceiver.h\

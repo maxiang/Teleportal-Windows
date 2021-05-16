@@ -5,7 +5,6 @@
 #include <QGamepadManager>
 #include <QMediaPlayer>
 
-
 // THIS APP USES ARDUSUB_API TO COMMUNICATE WITH ROBOT 192.168.2.2:14???
 // THIS APP USES GSTREAMER TO PLAY LIVE VIDEO STREAM ON PORT 5600
 // THIS APP USES PING TO RECEIVE SONAR DATA
@@ -86,6 +85,7 @@ MainWindow::MainWindow(QWidget *parent)		//START APPLICATION
     // SETUP MAIN LOOP
     connect(this,SIGNAL(SetQMLText()),this,SLOT(on_setQmlText()));
     setupTimer();
+    connect(ui->quickWidget,SIGNAL(statusChanged(QQuickWidget::Status)),this,SLOT(On_QML_StatusChanged(QQuickWidget::Status)));
     videoReceiver->start(ui->quickWidget);
     UpdateMapTopLableText("NO CONNECTION TO ROBOT");
 
@@ -100,6 +100,9 @@ MainWindow::MainWindow(QWidget *parent)		//START APPLICATION
         CheckRollOrPitchChang(true);
     });
     rollLPitchCheckTimer.start();
+    bsftpIdle=true;
+    m_curSelectButton="";
+    m_curSelectImg="";
 }
 
 
@@ -443,6 +446,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     // KEY W - UP
     if (event->key() == Qt::Key_W)
     {
+         Call_QML_ChangeKey("Up");
         // CHECK IF ROBOT IS ARMED, IF NOT REARM ROBOT
         if (!armCheckBox->isChecked())		
         {
@@ -455,12 +459,14 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         qDebug() << "You Pressed Key W";
         UpdateKeyControlValue();
         pressedKey.W = true;
-        manual_control.z = keyControlValue.upward;		
+        manual_control.z = keyControlValue.upward;
+
     }
 
     // KEY S - DOWN
     else if (event->key() == Qt::Key_S)
     {
+        Call_QML_ChangeKey("Down");
         // CHECK IF ROBOT IS ARMED, IF NOT REARM ROBOT
         if (!armCheckBox->isChecked())		
         {
@@ -484,6 +490,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     // KEY A - ROTATE ROBOT LEFT
     else if (event->key() == Qt::Key_A)
     {
+         Call_QML_ChangeKey("TurnLeft");
         // CHECK IF ROBOT IS ARMED, IF NOT REARM ROBOT
         if (!armCheckBox->isChecked())		
         {
@@ -514,6 +521,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     // KEY D - ROTATE ROBOT RIGHT
     else if (event->key() == Qt::Key_D)
     {
+        Call_QML_ChangeKey("TurnRight");
         // CHECK IF ROBOT IS ARMED, IF NOT REARM ROBOT
         if (!armCheckBox->isChecked())
         {
@@ -544,6 +552,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     // KEY UP - MOVE ROBOT FORWARD
     else if (event->key() == Qt::Key_Up)
     {
+        Call_QML_ChangeKey("ForWard");
         // CHECK IF ROBOT IS ARMED, IF NOT REARM ROBOT
         if (!armCheckBox->isChecked())
         {
@@ -567,6 +576,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     // KEY DOWN - MOVE ROBOT BACKWARD
     else if (event->key() == Qt::Key_Down)
     {
+          Call_QML_ChangeKey("BackWard");
         // CHECK IF ROBOT IS ARMED, IF NOT REARM ROBOT
         if (!armCheckBox->isChecked())
         {
@@ -586,6 +596,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     // KEY LEFT - MOVE ROBOT LEFT
     else if (event->key() == Qt::Key_Left)
     {
+         Call_QML_ChangeKey("MoveLeft");
         // CHECK IF ROBOT IS ARMED, IF NOT REARM ROBOT
         if (!armCheckBox->isChecked())
         {
@@ -605,6 +616,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     // KEY RIGHT - MOVE ROBOT RIGHT
     else if (event->key() == Qt::Key_Right)
     {
+        Call_QML_ChangeKey("MoveRight");
         // CHECK IF ROBOT IS ARMED, IF NOT REARM ROBOT
         if (!armCheckBox->isChecked())		
         {
@@ -624,6 +636,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     // KEY R - CAMERA TILT UP
     else if (event->key() == Qt::Key_R)
      {
+         Call_QML_ChangeKey("CamUp");
         // CHECK IF ROBOT IS ARMED, IF NOT REARM ROBOT
         if (!armCheckBox->isChecked())
         {
@@ -642,6 +655,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
      // KEY F - CAMERA TILT DOWN
      else if (event->key() == Qt::Key_F)
      {
+        Call_QML_ChangeKey("CamDown");
         // CHECK IF ROBOT IS ARMED, IF NOT REARM ROBOT
         if (!armCheckBox->isChecked())
         {
@@ -659,6 +673,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
    // KEY T - LIGHTS BRIGHTER
    else if (event->key() == Qt::Key_T)
      {
+         Call_QML_ChangeKey("LightsUp");
         // CHECK IF ROBOT IS ARMED, IF NOT REARM ROBOT
         if (!armCheckBox->isChecked())
         {
@@ -676,6 +691,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
      // KEY G - LIGHTS DIMMER
      else if (event->key() == Qt::Key_G)
      {
+        Call_QML_ChangeKey("LightsDown");
         // CHECK IF ROBOT IS ARMED, IF NOT REARM ROBOT
         if (!armCheckBox->isChecked())
         {
@@ -1893,16 +1909,21 @@ void MainWindow::on_gamepadDisconnected(int deviceId)
 
 void MainWindow::on_actionTakePhoto_triggered()
 {
+    if(!bsftpIdle)
+        return;
+    bsftpIdle=false;
     // TAKE SCREENSHOT PHOTO AND UPLOAD TO SFTP SERVER
 
     // DISABLE PHOTO ICON FOR PHOTO DELAY SETTING SECONDS
     ui->actionTakePhoto->setDisabled(true);
-    QTimer::singleShot(strPhotoDelay*1000, this,[&]()
-    {
-         ui->actionTakePhoto->setEnabled(true);
-    });
-
+    /*
+            QTimer::singleShot(strPhotoDelay*1000, this,[&]()
+            {
+                 ui->actionTakePhoto->setEnabled(true);
+            });
+            */
     // TAKE SCREENSHOT OF PROGRAM WINDOW
+    std::thread uploaderThread([&](){
     QScreen* scr=this->screen();
     QPixmap result = scr->grabWindow(this->winId());
 
@@ -1919,13 +1940,71 @@ void MainWindow::on_actionTakePhoto_triggered()
     result.save(strLocaTempFile);
     PlayMediaFileMapText("photo");
 
-    // UPLOAD LOCAL FILE TO SFTP SERVER 
-    static SecureFileUploader sftp;
-    connect(&sftp,&SecureFileUploader::SftpEndcomplete,this,[&]{
-        bsftpIdle=true;
+    // UPLOAD LOCAL FILE TO SFTP SERVER
 
+
+        SecureFileUploader sftp;
+        QEventLoop loop;
+        connect(&sftp,&SecureFileUploader::SftpEndcomplete,[&]{
+            bsftpIdle=true;
+            ui->actionTakePhoto->setEnabled(true);
+            loop.quit();
+        });
+
+        sftp.upload(strLocaTempFile,strRemoteDir,strHost,strUser,strPass);
+        loop.exec();
     });
-    sftp.upload(strLocaTempFile,strRemoteDir,strHost,strUser,strPass);
+
+    uploaderThread.detach();
 }
 
 	// HEY THIS WAS A HARD PROJECT TO LEARN TO CODE WITH - GIVE ME A BREAK
+void  MainWindow::On_QML_HighSpeed()
+{
+    qDebug()<<"On_QML_HighSpeed";
+    SetQMLItemOpacity("HighSpeed",0.5);
+    SetQMLItemOpacity("LowSpeed",1);
+    m_curSelectButton="HighSpeed";
+}
+void  MainWindow::On_QML_LowSpeed()
+{
+     qDebug()<<"On_QML_LowSpeed";
+     SetQMLItemOpacity("HighSpeed",1);
+     SetQMLItemOpacity("LowSpeed",0.5);
+     m_curSelectButton="LowSpeed";
+}
+void  MainWindow::Call_QML_ChangeKey(const QString& strKey)
+{
+    SetQMLItemOpacity(strKey,0.5);
+    SetQMLItemOpacity(m_curSelectImg,1);
+    m_curSelectImg=strKey;
+}
+void  MainWindow::SetQMLItemOpacity(QString strObName,qreal fOpacity)
+{
+    if(m_qmlObjectMap.find(strObName)==m_qmlObjectMap.end())
+        return;
+    m_qmlObjectMap[strObName]->setProperty("opacity",QVariant::fromValue(fOpacity));
+}
+void  MainWindow::On_QML_StatusChanged(QQuickWidget::Status status)
+ {
+    if(status==QQuickWidget::Ready)
+    {
+        auto hButton=ui->quickWidget->rootObject()->findChild<QObject*>("HighSpeed");
+        QObject::connect(hButton,SIGNAL(clicked()),this,SLOT(On_QML_HighSpeed()));
+        m_qmlObjectMap["HighSpeed"]=hButton;
+        hButton=ui->quickWidget->rootObject()->findChild<QObject*>("LowSpeed");
+        QObject::connect(hButton,SIGNAL(clicked()),this,SLOT(On_QML_LowSpeed()));
+        m_qmlObjectMap["LowSpeed"]=hButton;
+        //keyimg
+        QStringList strImgList={"ForWard","MoveLeft","BackWard",
+                                "MoveRight","Up","TurnLeft","Down",
+                                "TurnRight","CamUp","LightsUp",
+                               "CamDown","LightsDown"};
+
+       for(auto i:strImgList)
+       {
+           m_qmlObjectMap[i]=ui->quickWidget->rootObject()->findChild<QObject*>(i);
+       }
+
+    }
+ }
